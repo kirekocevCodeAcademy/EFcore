@@ -9,14 +9,21 @@ namespace SamuraiApp
 {
     class Program
     {
+        private static SamuraiDbContext _context = new SamuraiDbContext();
         static void Main(string[] args)
         {
             //InsertSamurai();
             //InsertMultipleSamurai();
-           QuerySamurai();
+            //QuerySamurai();
             //InsertDiffObj();
 
+            //InsertMultipleSamuraisViaBatch();
 
+            //UpdateSamurai();
+            //UpdateMultipleSamurai();
+
+            //UpdateDisconectedObj();
+            DeleteSamurai();
 
             Console.ReadKey();
         }
@@ -154,11 +161,184 @@ namespace SamuraiApp
                 var samurais_ParameterizedQuery = context.Samurais.Where(s => s.Name == name).ToList();
                 var samurai_Object = context.Samurais.FirstOrDefault(s => s.Name == name);
                 var samurais_ObjectFindByKeyValue = context.Samurais.Find(2);
-                var samuraisJ = context.Samurais.Where(s => EF.Functions.Like(s.Name, "J%")).ToList();
-                var search = "J%";
+                var samuraisJ = context.Samurais.Where(s => EF.Functions.Like(s.Name, "K%")).ToList();
+                var search = "K%";
                 var samuraisJParameter = context.Samurais.Where(s => EF.Functions.Like(s.Name, search)).ToList();
             }
 
         }
+
+        private static void UpdateSamurai()
+        {
+            using(var db = new SamuraiDbContext())
+            {
+                db.Samurais.Add(new Samurai { Name = "Temp" });
+                var s1 = db.Samurais.SingleOrDefault(s => s.Id == 1);
+                if(s1 != null)
+                {
+                    s1.Name = "sen" + s1.Name;                    
+                }
+                db.SaveChanges();
+            }
+        }
+
+        private static void UpdateMultipleSamurai()
+        {
+            using (var db = new SamuraiDbContext())
+            {
+                var samurais = db.Samurais.Where(s => EF.Functions.Like(s.Name, "S%")).ToList();
+                foreach (var item in samurais)
+                {
+                    item.Name = "sen" + item.Name;
+                }
+                db.SaveChanges();
+            }
+        }
+
+        private static void UpdateDisconectedObj()
+        {
+            Samurai s;
+            using (var db = new SamuraiDbContext())
+            {
+                s = db.Samurais.Single(s => s.Id == 4);
+            }
+
+            s.Name = "Dis" + s.Name;
+            using (var dbNew = new SamuraiDbContext())
+            {
+                dbNew.Samurais.Update(s);
+                dbNew.SaveChanges();
+            }
+        }
+
+        private static void LinqQuery()
+        {
+            using (var dbNew = new SamuraiDbContext())
+            {
+                var query = from s in dbNew.Samurais
+                            where EF.Functions.Like(s.Name, "S%")
+                            select s;
+
+                var temp = query.ToList();
+                                
+            }
+        }
+
+        private static void DeleteSamurai()
+        {
+            Samurai s;
+            using(var db = new SamuraiDbContext())
+            {
+                s = db.Samurais.First(s => EF.Functions.Like(s.Name, "S%"));                
+            }
+
+            using (var dbNew = new SamuraiDbContext())
+            {
+                dbNew.Samurais.Remove(s);
+                dbNew.SaveChanges();
+            }
+        }
+
+        private static void RetrieveAndUpdateSamurai()
+        {
+            var samurai = _context.Samurais.FirstOrDefault();
+            samurai.Name += "San";
+            _context.SaveChanges();
+        }
+
+        private static void RetrieveAndUpdateMultipleSamurais()
+        {
+            var samurais = _context.Samurais.ToList();
+            samurais.ForEach(s => s.Name += "San");
+            _context.SaveChanges();
+        }
+
+
+        private static void QueryAndUpdateSamurai_Disconnected()
+        {
+            var samurai = _context.Samurais.FirstOrDefault(s => s.Name == "Kikuchiyo");
+            samurai.Name += "San";
+            using (var newContextInstance = new SamuraiDbContext())
+            {
+                newContextInstance.Samurais.Update(samurai);
+                newContextInstance.SaveChanges();
+            }
+        }
+
+        private static void InsertBattle()
+        {
+            _context.Battles.Add(new Battle
+            {
+                Name = "Battle of Okehazama",
+                StartDate = new DateTime(1560, 05, 01),
+                EndDate = new DateTime(1560, 06, 15)
+            });
+            _context.SaveChanges();
+        }
+
+        private static void QueryAndUpdateBattle_Disconnected()
+        {
+            var battle = _context.Battles.FirstOrDefault();
+            battle.EndDate = new DateTime(1560, 06, 30);
+            using (var newContextInstance = new SamuraiDbContext())
+            {
+                newContextInstance.Battles.Update(battle);
+                newContextInstance.SaveChanges();
+            }
+        }
+
+
+
+        private static void AddSomeMoreSamurais()
+        {
+            _context.AddRange(
+               new Samurai { Name = "Kambei Shimada" },
+               new Samurai { Name = "Shichirōji " },
+               new Samurai { Name = "Katsushirō Okamoto" },
+               new Samurai { Name = "Heihachi Hayashida" },
+               new Samurai { Name = "Kyūzō" },
+               new Samurai { Name = "Gorōbei Katayama" }
+             );
+            _context.SaveChanges();
+        }
+
+        private static void DeleteWhileTracked()
+        {
+            var samurai = _context.Samurais.FirstOrDefault(s => s.Name == "Kambei Shimada");
+            _context.Samurais.Remove(samurai);
+            //some alternates:
+            // _context.Remove(samurai);
+            // _context.Samurais.Remove(_context.Samurais.Find(1));
+            _context.SaveChanges();
+        }
+
+        private static void DeleteWhileNotTracked()
+        {
+            var samurai = _context.Samurais.FirstOrDefault(s => s.Name == "Heihachi Hayashida");
+            using (var contextNewAppInstance = new SamuraiDbContext())
+            {
+                contextNewAppInstance.Samurais.Remove(samurai);
+                //contextNewAppInstance.Entry(samurai).State=EntityState.Deleted;
+                contextNewAppInstance.SaveChanges();
+            }
+        }
+
+        private static void DeleteMany()
+        {
+            var samurais = _context.Samurais.Where(s => s.Name.Contains("ō"));
+            _context.Samurais.RemoveRange(samurais);
+            //alternate: _context.RemoveRange(samurais);
+            _context.SaveChanges();
+        }
+
+        private static void DeleteUsingId(int samuraiId)
+        {
+            var samurai = _context.Samurais.Find(samuraiId);
+            _context.Remove(samurai);
+            _context.SaveChanges();
+            //alternate: call a stored procedure!
+            //_context.Database.ExecuteSqlCommand("exec DeleteById {0}", samuraiId);
+        }
+
     }
 }
