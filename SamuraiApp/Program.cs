@@ -23,11 +23,17 @@ namespace SamuraiApp
             //UpdateMultipleSamurai();
 
             //UpdateDisconectedObj();
-            DeleteSamurai();
+            //DeleteSamurai();
+
+            //SaveComplexSamurai();
+            //AddQuote();
+
+            AddQuoteDisc();
 
             Console.ReadKey();
         }
 
+        #region Part1
         public static void InsertSamurai()
         {
             var samurai = new Samurai();
@@ -338,6 +344,51 @@ namespace SamuraiApp
             _context.SaveChanges();
             //alternate: call a stored procedure!
             //_context.Database.ExecuteSqlCommand("exec DeleteById {0}", samuraiId);
+        }
+        #endregion
+
+        public static void SaveComplexSamurai()
+        {
+            var s = new Samurai();
+            s.Name = "Kire";
+            s.Quotes.Add(new Quote
+            {
+                Text = "Quote 1"
+            });
+            s.Quotes.Add(new Quote
+            {
+                Text = "Quote 2"
+            });
+
+            using(var db = new SamuraiDbContext())
+            {
+                db.Samurais.Add(s);
+                db.SaveChanges();
+            }
+        }
+
+        public static void AddQuote()
+        {
+            using (var db = new SamuraiDbContext())
+            {
+                var s = db.Samurais.Single(x => x.Id == 11);
+                s.Quotes.Add(new Quote { Text = "Quote 3" });
+                db.SaveChanges();
+            }
+        }
+
+        public static void AddQuoteDisc()
+        {
+            using(var db = new SamuraiDbContext())
+            {
+                db.Quotes.Add(new Quote
+                {
+                    Text = "Quote 4",
+                    SamuraiId = 11
+                });
+
+                db.SaveChanges();
+            }
         }
 
     }
