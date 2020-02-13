@@ -470,6 +470,99 @@ namespace SamuraiApp
                 }
             }            
         }
+
+        private static void InsertNewPkFkGraph()
+        {
+            var samurai = new Samurai
+            {
+                Name = "Kambei Shimada",
+                Quotes = new List<Quote>
+                               {
+                                 new Quote {Text = "I've come to save you"}
+                               }
+            };
+            _context.Samurais.Add(samurai);
+            _context.SaveChanges();
+        }
+
+        private static void InsertNewPkFkGraphMultipleChildren()
+        {
+            var samurai = new Samurai
+            {
+                Name = "Kyūzō",
+                Quotes = new List<Quote> {
+                  new Quote {Text = "Watch out for my sharp sword!"},
+                  new Quote {Text="I told you to watch out for the sharp sword! Oh well!" }
+                }
+            };
+            _context.Samurais.Add(samurai);
+            _context.SaveChanges();
+        }
+
+        private static void AddChildToExistingObjectWhileTracked()
+        {
+            var samurai = _context.Samurais.First();
+            samurai.Quotes.Add(new Quote
+            {
+                Text = "I bet you're happy that I've saved you!"
+            });
+            _context.SaveChanges();
+        }
+
+        private static void AddChildToExistingObjectWhileNotTracked(int samuraiId)
+        {
+            var quote = new Quote
+            {
+                Text = "Now that I saved you, will you feed me dinner?",
+                SamuraiId = samuraiId
+            };
+            using (var newContext = new SamuraiDbContext())
+            {
+                newContext.Quotes.Add(quote);
+                newContext.SaveChanges();
+            }
+        }
+
+        private static void EagerLoadSamuraiWithQuotes()
+        {
+            var samuraiWithQuotes = _context.Samurais.Where(s => s.Name.Contains("Kyūzō"))
+                                                     .Include(s => s.Quotes)
+                                                     .Include(s => s.SecretIdentity)
+                                                     .FirstOrDefault();
+        }
+
+
+        public struct IdAndName
+        {
+            public IdAndName(int id, string name)
+            {
+                Id = id;
+                Name = name;
+            }
+            public int Id;
+            public string Name;
+        }
+        private static void ProjectSomeProperties()
+        {
+            var someProperties = _context.Samurais.Select(s => new { s.Id, s.Name }).ToList();
+            var idsAndNames = _context.Samurais.Select(s => new IdAndName(s.Id, s.Name)).ToList();
+        }
+
+        private static void ProjectSamuraisWithQuotes()
+        {
+            var somePropertiesWithQuotes = _context.Samurais
+                .Select(s => new { s.Id, s.Name, s.Quotes.Count })
+                .ToList();
+
+        }
+
+
+        private static void FilteringWithRelatedData()
+        {
+            var samurais = _context.Samurais
+                                   .Where(s => s.Quotes.Any(q => q.Text.Contains("happy")))
+                                   .ToList();
+        }   
     }
 
     internal class SamuraiQuote
