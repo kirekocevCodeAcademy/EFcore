@@ -28,7 +28,13 @@ namespace SamuraiApp
             //SaveComplexSamurai();
             //AddQuote();
 
-            AddQuoteDisc();
+            //AddQuoteDisc();
+
+            //GetSamuraiWithQuotes();
+            //GetQuotes();
+
+            //GetSamuraiQuote();
+            GetSamuraiwithSpecificQuote();
 
             Console.ReadKey();
         }
@@ -347,6 +353,7 @@ namespace SamuraiApp
         }
         #endregion
 
+        #region Part 2
         public static void SaveComplexSamurai()
         {
             var s = new Samurai();
@@ -379,17 +386,95 @@ namespace SamuraiApp
 
         public static void AddQuoteDisc()
         {
-            using(var db = new SamuraiDbContext())
+            var quote = new Quote
             {
-                db.Quotes.Add(new Quote
-                {
-                    Text = "Quote 4",
-                    SamuraiId = 11
-                });
-
+                Text = "Quote 4",
+                SamuraiId = 11
+            };
+            using (var db = new SamuraiDbContext())
+            {
+                db.Quotes.Add(quote);
                 db.SaveChanges();
             }
         }
 
+        public static void GetSamuraiWithQuotes()
+        {
+            using (var db = new SamuraiDbContext())
+            {
+                var samurais = db.Samurais.Include(s => s.Quotes).Where(s => EF.Functions.Like(s.Name, "K%")).ToList();
+                foreach (var samurai in samurais)
+                {
+                    Console.WriteLine($"{samurai.Id} {samurai.Name}");
+                    Console.WriteLine("--------------------------------------");
+                    foreach (var quote in samurai.Quotes)
+                    {
+                        Console.WriteLine($"{quote.Id} {quote.Text} {quote.SamuraiId}");
+                    }
+                }
+            }
+
+        }
+
+        public static void GetQuotes()
+        {
+            using(var db = new SamuraiDbContext())
+            {
+                var quotes = db.Quotes.Include(q => q.Samurai).Where(q => EF.Functions.Like(q.Text, "Q%")).ToList();
+                foreach (var quote in quotes)
+                {
+                    Console.WriteLine($"Samuri: {quote.Samurai.Name} - {quote.Text}");
+                }
+            }
+        }
+        #endregion
+
+        public static void GetSamuraiQuote()
+        {
+            using(var db = new SamuraiDbContext())
+            {
+                var result = db.Samurais.Select(s => new { SamName = s.Name, QuotesCount = s.Quotes.Count() }).ToList();
+                foreach (var item in result)
+                {
+                    Console.WriteLine($"{item.SamName} : Count: {item.QuotesCount}");
+                }
+            }
+        }
+
+        public static void GetSamuraiQuote1()
+        {
+            using (var db = new SamuraiDbContext())
+            {
+                var result = db.Samurais.Select(s => new SamuraiQuote { SamName = s.Name, QuotesCount = s.Quotes.Count() }).ToList();
+                foreach (var item in result)
+                {
+                    Console.WriteLine($"{item.SamName} : Count: {item.QuotesCount}");
+                }
+            }
+        }
+
+        public static void GetSamuraiwithSpecificQuote()
+        {
+            using (var db = new SamuraiDbContext())
+            {
+                var result = db.Samurais
+                    .Where(s => s.Quotes.Any(q => EF.Functions.Like(q.Text, "Q%")))
+                    .Where(s => s.Name == "Kire")
+                    .OrderBy(s => s.Quotes.Count())
+                    .Select(s => new SamuraiQuote { SamName = s.Name, QuotesCount = s.Quotes.Count() })
+                    .OrderBy(s => s.SamName)
+                    .ToList();
+                foreach (var item in result)
+                {
+                    Console.WriteLine($"{item.SamName} : Count: {item.QuotesCount}");
+                }
+            }            
+        }
+    }
+
+    internal class SamuraiQuote
+    {
+        public string SamName { get; set; }
+        public int QuotesCount { get; set; }
     }
 }
